@@ -18,6 +18,7 @@ Android app + backend pipeline for turning **PDFs, text, screenshots, and pictur
 - `docs/start-here.md` – Step-by-step execution plan for the first sprint.
 - `tasks/mvp-checklist.md` – Build checklist to track MVP readiness.
 - `backend/contracts/jobs.http.md` – Concrete API request/response examples.
+- `backend_api/` – Runnable FastAPI MVP scaffold with job/source/start/status/preview endpoints.
 
 ## High-Level Flow
 1. Upload (PDF/text/image) from Android.
