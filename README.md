@@ -15,6 +15,9 @@ Android app + backend pipeline for turning **PDFs, text, screenshots, and pictur
 - `docs/implementation-roadmap.md` – Practical build sequence for MVP → V2.
 - `prompts/mcq_generation_prompt.md` – Production prompt template for Gemini.
 - `backend/schemas/` – JSON schemas for chunks and generated cards.
+- `docs/start-here.md` – Step-by-step execution plan for the first sprint.
+- `tasks/mvp-checklist.md` – Build checklist to track MVP readiness.
+- `backend/contracts/jobs.http.md` – Concrete API request/response examples.
 
 ## High-Level Flow
 1. Upload (PDF/text/image) from Android.
