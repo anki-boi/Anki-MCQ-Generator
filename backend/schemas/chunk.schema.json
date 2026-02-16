@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anki-mcq-generator/schemas/chunk.schema.json",
+  "title": "Chunk",
+  "type": "object",
+  "required": ["chunk_id", "topic", "subtopic", "token_estimate", "text", "source_refs"],
+  "properties": {
+    "chunk_id": { "type": "string" },
+    "topic": { "type": "string" },
+    "subtopic": { "type": "string" },
+    "token_estimate": { "type": "integer", "minimum": 1 },
+    "text": { "type": "string", "minLength": 1 },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source_id", "page", "start_char", "end_char"],
+        "properties": {
+          "source_id": { "type": "string" },
+          "page": { "type": "integer", "minimum": 1 },
+          "start_char": { "type": "integer", "minimum": 0 },
+          "end_char": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
