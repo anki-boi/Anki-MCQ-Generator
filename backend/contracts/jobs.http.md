@@ -7,7 +7,7 @@ Request:
 ```json
 {
   "course_name": "Pharmacology 101",
-  "output_format": ["csv"]
+  "output_format": ["csv", "apkg"]
 }
 ```
 
@@ -58,6 +58,26 @@ Response:
 }
 ```
 
+## Get Chunks
+`GET /v1/jobs/{job_id}/chunks`
+
+Response:
+```json
+{
+  "job_id": "job_123",
+  "status": "generating",
+  "chunks": [
+    {
+      "chunk_id": "chk_001",
+      "topic": "Antibiotics",
+      "subtopic": "default",
+      "token_estimate": 6123,
+      "text": "..."
+    }
+  ]
+}
+```
+
 ## Get Card Preview
 `GET /v1/jobs/{job_id}/preview`
 
@@ -79,5 +99,39 @@ Response:
     "passed": 87,
     "failed": 13
   }
+}
+```
+
+## Request Export
+`POST /v1/jobs/{job_id}/export`
+
+Request:
+```json
+{
+  "format": "csv"
+}
+```
+
+Response:
+```json
+{
+  "export_id": "exp_987",
+  "job_id": "job_123",
+  "format": "csv",
+  "filename": "Pharmacology_101_job_123.csv",
+  "status": "ready"
+}
+```
+
+## Download Export
+`GET /v1/exports/{export_id}/download`
+
+Response:
+```json
+{
+  "export_id": "exp_987",
+  "filename": "Pharmacology_101_job_123.csv",
+  "content_type": "text/csv",
+  "content": "Question|Multiple Choice|Correct Answers|Extra"
 }
 ```

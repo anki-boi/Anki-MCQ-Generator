@@ -128,6 +128,15 @@ def cards_to_pipe_csv(cards: list[Card]) -> str:
     return "\n".join(rows)
 
 
+def cards_to_apkg_manifest(cards: list[Card], deck_name: str) -> str:
+    """Placeholder .apkg payload representation until binary packaging is integrated."""
+    lines = [f"DECK={deck_name}", "FORMAT=apkg-placeholder", f"CARDS={len(cards)}"]
+    for idx, card in enumerate(cards, start=1):
+        lines.append(f"CARD_{idx}_Q={card.question}")
+        lines.append(f"CARD_{idx}_A={'<br>'.join(card.correct_answers)}")
+    return "\n".join(lines)
+
+
 def run_job(store: InMemoryStore, job_id: str) -> None:
     job = store.get_job(job_id)
     if job is None:

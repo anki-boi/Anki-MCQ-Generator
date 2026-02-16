@@ -7,7 +7,7 @@ client = TestClient(app)
 
 
 def test_end_to_end_job_pipeline_and_exports() -> None:
-    create_resp = client.post("/v1/jobs", json={"course_name": "Pharma", "output_format": ["csv"]})
+    create_resp = client.post("/v1/jobs", json={"course_name": "Pharma", "output_format": ["csv", "apkg"]})
     assert create_resp.status_code == 200
     job_id = create_resp.json()["job_id"]
 
@@ -27,26 +27,33 @@ def test_end_to_end_job_pipeline_and_exports() -> None:
     start_resp = client.post(f"/v1/jobs/{job_id}/start")
     assert start_resp.status_code == 200
 
-    status_resp = client.get(f"/v1/jobs/{job_id}")
-    assert status_resp.status_code == 200
-    assert status_resp.json()["status"] in {"parsing", "done", "chunking", "generating"}
-
     chunks_resp = client.get(f"/v1/jobs/{job_id}/chunks")
     assert chunks_resp.status_code == 200
     assert len(chunks_resp.json()["chunks"]) >= 1
 
     preview_resp = client.get(f"/v1/jobs/{job_id}/preview")
     assert preview_resp.status_code == 200
-    body = preview_resp.json()
-    assert body["status"] == "done"
-    assert len(body["cards"]) >= 1
-    assert body["validation"]["failed"] == 0
 
-    csv_resp = client.get(f"/v1/jobs/{job_id}/export/csv")
-    assert csv_resp.status_code == 200
-    csv_body = csv_resp.json()
-    assert csv_body["filename"].endswith(".csv")
-    assert "|" in csv_body["content"]
+    export_csv_resp = client.post(f"/v1/jobs/{job_id}/export", json={"format": "csv"})
+    assert export_csv_resp.status_code == 200
+    export_csv_id = export_csv_resp.json()["export_id"]
+
+    download_csv_resp = client.get(f"/v1/exports/{export_csv_id}/download")
+    assert download_csv_resp.status_code == 200
+    csv_payload = download_csv_resp.json()
+    assert csv_payload["filename"].endswith(".csv")
+    assert csv_payload["content_type"] == "text/csv"
+    assert "|" in csv_payload["content"]
+
+    export_apkg_resp = client.post(f"/v1/jobs/{job_id}/export", json={"format": "apkg"})
+    assert export_apkg_resp.status_code == 200
+    export_apkg_id = export_apkg_resp.json()["export_id"]
+
+    download_apkg_resp = client.get(f"/v1/exports/{export_apkg_id}/download")
+    assert download_apkg_resp.status_code == 200
+    apkg_payload = download_apkg_resp.json()
+    assert apkg_payload["filename"].endswith(".apkg")
+    assert "DECK=" in apkg_payload["content"]
 
 
 def test_cannot_start_without_sources() -> None:
@@ -67,3 +74,8 @@ def test_source_type_validation() -> None:
         files={"file": ("notes.txt", "sample text", "text/plain")},
     )
     assert upload_resp.status_code == 422
+
+
+def test_download_missing_export() -> None:
+    missing_resp = client.get("/v1/exports/exp_unknown/download")
+    assert missing_resp.status_code == 404

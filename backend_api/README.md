@@ -23,4 +23,5 @@ pytest
 - `GET /v1/jobs/{job_id}`
 - `GET /v1/jobs/{job_id}/chunks`
 - `GET /v1/jobs/{job_id}/preview`
-- `GET /v1/jobs/{job_id}/export/csv`
+- `POST /v1/jobs/{job_id}/export`
+- `GET /v1/exports/{export_id}/download`

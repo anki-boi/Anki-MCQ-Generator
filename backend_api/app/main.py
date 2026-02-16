@@ -2,23 +2,26 @@ from __future__ import annotations
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 
-from .pipeline import cards_to_pipe_csv, run_job
+from .pipeline import cards_to_apkg_manifest, cards_to_pipe_csv, run_job
 from .schemas import (
     ChunksResponse,
-    CsvExportResponse,
+    ExportDownloadResponse,
+    ExportRequest,
+    ExportResponse,
     JobCreateRequest,
     JobCreateResponse,
     JobPreviewResponse,
     JobStartResponse,
     JobStatus,
     JobStatusResponse,
+    OutputFormat,
     SourceType,
     SourceUploadResponse,
     ValidationSummary,
 )
 from .store import InMemoryStore
 
-app = FastAPI(title="Anki MCQ Generator Backend", version="0.2.0")
+app = FastAPI(title="Anki MCQ Generator Backend", version="0.3.0")
 store = InMemoryStore()
 
 
@@ -108,17 +111,50 @@ def preview(job_id: str) -> JobPreviewResponse:
     )
 
 
-@app.get("/v1/jobs/{job_id}/export/csv", response_model=CsvExportResponse)
-def export_csv(job_id: str) -> CsvExportResponse:
+@app.post("/v1/jobs/{job_id}/export", response_model=ExportResponse)
+def export_job(job_id: str, payload: ExportRequest) -> ExportResponse:
     job = store.get_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="job not found")
     if job.status != JobStatus.DONE:
         raise HTTPException(status_code=409, detail="job not complete")
 
-    return CsvExportResponse(
+    safe_course_name = job.course_name.replace(" ", "_")
+
+    if payload.format == OutputFormat.CSV:
+        filename = f"{safe_course_name}_{job.job_id}.csv"
+        content = cards_to_pipe_csv(job.cards)
+        content_type = "text/csv"
+    else:
+        filename = f"{safe_course_name}_{job.job_id}.apkg"
+        content = cards_to_apkg_manifest(job.cards, deck_name=f"{job.course_name}::Default")
+        content_type = "application/octet-stream"
+
+    export = store.create_export(
         job_id=job.job_id,
-        status=job.status,
-        filename=f"{job.course_name.replace(' ', '_')}_{job.job_id}.csv",
-        content=cards_to_pipe_csv(job.cards),
+        export_format=payload.format,
+        filename=filename,
+        content_type=content_type,
+        content=content,
+    )
+    return ExportResponse(
+        export_id=export.export_id,
+        job_id=export.job_id,
+        format=export.export_format,
+        filename=export.filename,
+        status="ready",
+    )
+
+
+@app.get("/v1/exports/{export_id}/download", response_model=ExportDownloadResponse)
+def download_export(export_id: str) -> ExportDownloadResponse:
+    export = store.get_export(export_id)
+    if not export:
+        raise HTTPException(status_code=404, detail="export not found")
+
+    return ExportDownloadResponse(
+        export_id=export.export_id,
+        filename=export.filename,
+        content_type=export.content_type,
+        content=export.content,
     )

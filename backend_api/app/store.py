@@ -17,6 +17,17 @@ class SourceRecord:
 
 
 @dataclass
+class ExportRecord:
+    export_id: str
+    job_id: str
+    export_format: OutputFormat
+    filename: str
+    content_type: str
+    content: str
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@dataclass
 class JobRecord:
     job_id: str
     course_name: str
@@ -33,6 +44,7 @@ class JobRecord:
 class InMemoryStore:
     def __init__(self) -> None:
         self._jobs: dict[str, JobRecord] = {}
+        self._exports: dict[str, ExportRecord] = {}
         self._lock = Lock()
 
     def create_job(self, course_name: str, output_format: list[OutputFormat]) -> JobRecord:
@@ -73,3 +85,28 @@ class InMemoryStore:
             job = self._jobs[job_id]
             job.status = JobStatus.FAILED
             job.current_step = f"failed: {reason}"
+
+    def create_export(
+        self,
+        *,
+        job_id: str,
+        export_format: OutputFormat,
+        filename: str,
+        content_type: str,
+        content: str,
+    ) -> ExportRecord:
+        export = ExportRecord(
+            export_id=f"exp_{uuid4().hex[:10]}",
+            job_id=job_id,
+            export_format=export_format,
+            filename=filename,
+            content_type=content_type,
+            content=content,
+        )
+        with self._lock:
+            self._exports[export.export_id] = export
+        return export
+
+    def get_export(self, export_id: str) -> ExportRecord | None:
+        with self._lock:
+            return self._exports.get(export_id)

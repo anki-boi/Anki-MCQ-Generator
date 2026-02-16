@@ -93,8 +93,20 @@ class JobPreviewResponse(BaseModel):
     validation: ValidationSummary
 
 
-class CsvExportResponse(BaseModel):
+class ExportRequest(BaseModel):
+    format: OutputFormat
+
+
+class ExportResponse(BaseModel):
+    export_id: str
     job_id: str
-    status: JobStatus
+    format: OutputFormat
     filename: str
+    status: Literal["ready"]
+
+
+class ExportDownloadResponse(BaseModel):
+    export_id: str
+    filename: str
+    content_type: str
     content: str
