@@ -17,11 +17,11 @@ from .schemas import (
     OutputFormat,
     SourceType,
     SourceUploadResponse,
-    ValidationSummary,
+    ValidationReportResponse,
 )
 from .store import InMemoryStore
 
-app = FastAPI(title="Anki MCQ Generator Backend", version="0.3.0")
+app = FastAPI(title="Anki MCQ Generator Backend", version="0.4.0")
 store = InMemoryStore()
 
 
@@ -102,13 +102,23 @@ def preview(job_id: str) -> JobPreviewResponse:
     if job.status != JobStatus.DONE:
         raise HTTPException(status_code=409, detail="job not complete")
 
-    total = len(job.cards)
     return JobPreviewResponse(
         job_id=job.job_id,
         status=job.status,
         cards=job.cards,
-        validation=ValidationSummary(total=total, passed=total, failed=0),
+        validation=job.validation_summary,
     )
+
+
+@app.get("/v1/jobs/{job_id}/validation", response_model=ValidationReportResponse)
+def validation_report(job_id: str) -> ValidationReportResponse:
+    job = store.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="job not found")
+    if job.status != JobStatus.DONE:
+        raise HTTPException(status_code=409, detail="job not complete")
+
+    return ValidationReportResponse(job_id=job.job_id, summary=job.validation_summary, failed_cards=job.failed_cards)
 
 
 @app.post("/v1/jobs/{job_id}/export", response_model=ExportResponse)

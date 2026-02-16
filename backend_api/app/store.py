@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from threading import Lock
 from uuid import uuid4
 
-from .schemas import Card, Chunk, JobStatus, OutputFormat, SourceType
+from .schemas import Card, Chunk, JobStatus, OutputFormat, SourceType, ValidationErrorItem, ValidationSummary
 
 
 @dataclass
@@ -39,6 +39,8 @@ class JobRecord:
     sources: list[SourceRecord] = field(default_factory=list)
     chunks: list[Chunk] = field(default_factory=list)
     cards: list[Card] = field(default_factory=list)
+    validation_summary: ValidationSummary = field(default_factory=lambda: ValidationSummary(total=0, passed=0, failed=0))
+    failed_cards: list[ValidationErrorItem] = field(default_factory=list)
 
 
 class InMemoryStore:
@@ -76,9 +78,17 @@ class InMemoryStore:
         with self._lock:
             self._jobs[job_id].chunks = chunks
 
-    def set_cards(self, job_id: str, cards: list[Card]) -> None:
+    def set_validated_cards(
+        self,
+        job_id: str,
+        cards: list[Card],
+        summary: ValidationSummary,
+        failed_cards: list[ValidationErrorItem],
+    ) -> None:
         with self._lock:
             self._jobs[job_id].cards = cards
+            self._jobs[job_id].validation_summary = summary
+            self._jobs[job_id].failed_cards = failed_cards
 
     def mark_failed(self, job_id: str, reason: str) -> None:
         with self._lock:

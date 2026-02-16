@@ -73,10 +73,21 @@ class Card(BaseModel):
         return self
 
 
+class ValidationErrorItem(BaseModel):
+    reason: str
+    card: Card
+
+
 class ValidationSummary(BaseModel):
     total: int
     passed: int
     failed: int
+
+
+class ValidationReportResponse(BaseModel):
+    job_id: str
+    summary: ValidationSummary
+    failed_cards: list[ValidationErrorItem]
 
 
 class JobStatusResponse(BaseModel):

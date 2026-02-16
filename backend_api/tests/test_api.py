@@ -33,6 +33,15 @@ def test_end_to_end_job_pipeline_and_exports() -> None:
 
     preview_resp = client.get(f"/v1/jobs/{job_id}/preview")
     assert preview_resp.status_code == 200
+    preview_body = preview_resp.json()
+    assert preview_body["validation"]["total"] >= 1
+    assert preview_body["validation"]["passed"] >= 1
+
+    validation_resp = client.get(f"/v1/jobs/{job_id}/validation")
+    assert validation_resp.status_code == 200
+    validation_body = validation_resp.json()
+    assert "summary" in validation_body
+    assert "failed_cards" in validation_body
 
     export_csv_resp = client.post(f"/v1/jobs/{job_id}/export", json={"format": "csv"})
     assert export_csv_resp.status_code == 200

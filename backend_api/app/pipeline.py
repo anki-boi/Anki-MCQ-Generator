@@ -4,8 +4,9 @@ import re
 from collections import defaultdict
 from uuid import uuid4
 
-from .schemas import Card, Chunk, JobStatus
+from .schemas import Card, Chunk, JobStatus, ValidationErrorItem, ValidationSummary
 from .store import InMemoryStore
+from .validation import validate_cards
 
 
 _HEADING_PATTERN = re.compile(r"^(#{1,6}\s+.+|[A-Z][A-Za-z0-9\s]{2,}:)$")
@@ -68,7 +69,6 @@ def build_chunks(sections: dict[str, list[str]], target_min_tokens: int = 5000, 
                 )
             )
 
-    # small-chunk merge (topic-local) to move toward target_min_tokens when possible
     merged: list[Chunk] = []
     for chunk in chunks:
         if merged and merged[-1].topic == chunk.topic and merged[-1].token_estimate < target_min_tokens:
@@ -152,11 +152,15 @@ def run_job(store: InMemoryStore, job_id: str) -> None:
         store.set_chunks(job_id, chunks)
 
         store.update_progress(job_id, status=JobStatus.GENERATING, progress=75, current_step="card generation")
-        all_cards: list[Card] = []
+        raw_cards: list[Card] = []
         for chunk in chunks:
-            all_cards.extend(create_cards_from_chunk(chunk))
+            raw_cards.extend(create_cards_from_chunk(chunk))
 
-        store.set_cards(job_id, all_cards)
+        passed_cards, issues = validate_cards(raw_cards)
+        failed_cards = [ValidationErrorItem(reason=i.reason, card=i.card) for i in issues]
+        summary = ValidationSummary(total=len(raw_cards), passed=len(passed_cards), failed=len(failed_cards))
+        store.set_validated_cards(job_id, passed_cards, summary, failed_cards)
+
         store.update_progress(job_id, status=JobStatus.DONE, progress=100, current_step="completed")
     except Exception as exc:
         store.mark_failed(job_id, str(exc))

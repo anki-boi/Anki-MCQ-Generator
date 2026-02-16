@@ -102,6 +102,33 @@ Response:
 }
 ```
 
+
+## Validation Report
+`GET /v1/jobs/{job_id}/validation`
+
+Response:
+```json
+{
+  "job_id": "job_123",
+  "summary": {
+    "total": 100,
+    "passed": 87,
+    "failed": 13
+  },
+  "failed_cards": [
+    {
+      "reason": "true/false style options are forbidden",
+      "card": {
+        "question": "...",
+        "multiple_choice": ["..."],
+        "correct_answers": ["..."],
+        "extra": "..."
+      }
+    }
+  ]
+}
+```
+
 ## Request Export
 `POST /v1/jobs/{job_id}/export`
 
