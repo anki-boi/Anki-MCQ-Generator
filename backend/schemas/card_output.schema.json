@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anki-mcq-generator/schemas/card_output.schema.json",
+  "title": "CardOutput",
+  "type": "object",
+  "required": ["cards"],
+  "properties": {
+    "cards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["question", "multiple_choice", "correct_answers", "extra"],
+        "properties": {
+          "question": { "type": "string", "minLength": 1 },
+          "multiple_choice": {
+            "type": "array",
+            "minItems": 6,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "correct_answers": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "extra": { "type": "string", "minLength": 1 },
+          "source_anchor": {
+            "type": "object",
+            "properties": {
+              "chunk_id": { "type": "string" },
+              "evidence_refs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source_id": { "type": "string" },
+                    "page": { "type": "integer", "minimum": 1 }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "multiple_choice": { "type": "array" },
+                "correct_answers": { "type": "array" }
+              },
+              "required": ["multiple_choice", "correct_answers"]
+            },
+            "then": {
+              "properties": {
+                "multiple_choice": {
+                  "contains": { "type": "string" }
+                }
+              }
+            }
+          }
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
